@@ -23,8 +23,9 @@ const voronoi = (img, setConfigs) => {
         imgData.data[i + 1] * 0.59 +
         imgData.data[i + 2] * 0.11
     );
-    pointWeight[j] = gray;
+    pointWeight[j] = 1 - gray / 255;
   }
+  console.log(pointWeight);
 
   //随机生成采样模拟点
   const points = new Array(size * 2);
@@ -41,7 +42,7 @@ const voronoi = (img, setConfigs) => {
   const delaunay = new Delaunay(points);
   const voronoi = delaunay.voronoi([0, 0, width, height]);
 
-  for (let k = 0; k < 5; k++) {
+  for (let k = 0; k < 20; k++) {
     centroid.fill(0);
     weight.fill(0);
     //计算每个cell的加权重心
@@ -65,15 +66,16 @@ const voronoi = (img, setConfigs) => {
       points[i * 2 + 1] = y0 + (y1 - y0) * 1 + (Math.random() - 0.5) * w;
     }
     setConfigs({ points, width, height, n: 100 });
-    console.log(points);
     voronoi.update();
+    setConfigs({ points, width, height, n: 10000 });
   }
-  setConfigs({ points, width, height, n: 5000 });
+  setConfigs({ points, width, height, n: 10000 });
 };
 //子组件，用来生成模拟点图像
 const RenderImage = (props) => {
   const { points, width, height, n } = props.config;
   useEffect(() => {
+    console.log("Rerender");
     const canvas = document.getElementById("image");
     canvas.height = height;
     canvas.width = width;
