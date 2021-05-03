@@ -2,7 +2,25 @@ import { useEffect, useState } from "react";
 import { Delaunay } from "d3-delaunay";
 import profile from "./profile.png";
 
-const voronoi = (img, setConfigs) => {
+const drawPoints = (points, context, n) => {
+  //此处不再需要画板参数height和width了
+  debugger;
+  const height = context.canvas.height,
+    width = context.canvas.width;
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, width, height);
+  context.beginPath();
+  for (let i = 0; i < n; i++) {
+    const x = points[i * 2],
+      y = points[i * 2 + 1];
+    context.moveTo(x + 1.5, y);
+    context.arc(x, y, 1.5, 0, 2 * Math.PI);
+  }
+  context.fillStyle = "#000";
+  context.fill();
+};
+
+const voronoi = async (img, context, size) => {
   //通过canvas来处理图像,生成imgData
   const canvas = document.createElement("CANVAS");
   const width = img.width;
@@ -15,7 +33,7 @@ const voronoi = (img, setConfigs) => {
 
   //生成每个像素点的灰度值，留作之后加权用
   const length = imgData.data.length;
-  const size = height * width;
+  //const size = height * width;
   const pointWeight = new Array(size);
   for (let i = 0, j = 0; i < length; i += 4, j++) {
     const gray = Math.floor(
@@ -25,14 +43,12 @@ const voronoi = (img, setConfigs) => {
     );
     pointWeight[j] = 1 - gray / 255;
   }
-  console.log(pointWeight);
-
   //随机生成采样模拟点
   const points = new Array(size * 2);
   const centroid = new Array(size * 2).fill(0);
   const weight = new Array(size).fill(0);
   for (let i = 0; i < size; i++) {
-    for (let j = 0; j < 30; j++) {
+    for (let j = 0; j < 10; j++) {
       const x = (points[i * 2] = Math.floor(Math.random() * width));
       const y = (points[i * 2 + 1] = Math.floor(Math.random() * height));
       if (Math.random() < pointWeight[y * width + x]) break;
@@ -42,7 +58,11 @@ const voronoi = (img, setConfigs) => {
   const delaunay = new Delaunay(points);
   const voronoi = delaunay.voronoi([0, 0, width, height]);
 
-  for (let k = 0; k < 20; k++) {
+  for (let k = 0; k < 200; k++) {
+    drawPoints(points, context, size);
+    await new Promise((resolve) =>
+      setTimeout(() => resolve(), 1000 / (k + 10))
+    );
     centroid.fill(0);
     weight.fill(0);
     //计算每个cell的加权重心
@@ -65,11 +85,10 @@ const voronoi = (img, setConfigs) => {
       points[i * 2] = x0 + (x1 - x0) * 1 + (Math.random() - 0.5) * w;
       points[i * 2 + 1] = y0 + (y1 - y0) * 1 + (Math.random() - 0.5) * w;
     }
-    setConfigs({ points, width, height, n: 100 });
     voronoi.update();
-    setConfigs({ points, width, height, n: 10000 });
   }
-  setConfigs({ points, width, height, n: 10000 });
+  drawPoints(points, context, size);
+  //setConfigs({ points, width, height, n: 10000 });
 };
 //子组件，用来生成模拟点图像
 const RenderImage = (props) => {
@@ -105,8 +124,14 @@ const Trial = () => {
   useEffect(() => {
     const img = new Image();
     img.src = profile;
-    img.onload = () => voronoi(img, setConfigs);
+    const canvas = document.getElementById("profile");
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const context = canvas.getContext("2d");
+      voronoi(img, context, 10000);
+    };
   }, []);
-  return <RenderImage config={configs} />;
+  return <canvas id="profile" />;
 };
 export default Trial;
