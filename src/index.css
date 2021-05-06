@@ -11,3 +11,33 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.renderPlots {
+  width:500px
+}
+
+.container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.container label{
+  margin-top: 7.5px;
+  width:40px;
+  height:35px;
+}
+
+.container label img{
+  height:100%;  
+  width:100%;
+}
+
+.container label img:hover{
+  filter: drop-shadow(0px 0px 5px #87CEFA);
+}
+
+input[type=file]{ 
+  visibility: hidden;
+  position: absolute;
+}

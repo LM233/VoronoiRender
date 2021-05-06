@@ -1,12 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import 'bootstrap/dist/css/bootstrap.min.css';
 import "./index.css";
-import Trial from "./Trial";
+import App from "./App.js";
 import reportWebVitals from "./reportWebVitals";
 
 ReactDOM.render(
   <React.StrictMode>
-    <Trial />
+    <App />
   </React.StrictMode>,
   document.getElementById("root")
 );

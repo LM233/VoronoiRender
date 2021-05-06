@@ -1,18 +1,18 @@
-import { useEffect, useState } from "react";
+import React,{ useEffect, useState } from "react";
+import ProgressBar from 'react-bootstrap/ProgressBar';
 import { Delaunay } from "d3-delaunay";
+import { config } from "./config.js";
 import profile from "./profile.png";
 
-const drawPoints = (points, context, n) => {
+const drawPoints = (points, context, n, originHeight, originWidth) => {
   //此处不再需要画板参数height和width了
-  debugger;
-  const height = context.canvas.height,
-    width = context.canvas.width;
+  const {height, width} = config;
   context.fillStyle = "#fff";
   context.fillRect(0, 0, width, height);
   context.beginPath();
   for (let i = 0; i < n; i++) {
-    const x = points[i * 2],
-      y = points[i * 2 + 1];
+    const x = points[i * 2]*width/originWidth;
+    const y = points[i * 2 + 1]*height/originHeight;
     context.moveTo(x + 1.5, y);
     context.arc(x, y, 1.5, 0, 2 * Math.PI);
   }
@@ -20,7 +20,7 @@ const drawPoints = (points, context, n) => {
   context.fill();
 };
 
-const voronoi = async (img, context, size) => {
+const voronoi = async (img, context, size, setPercentile, percentile, setBarAnimated) => {
   //通过canvas来处理图像,生成imgData
   const canvas = document.createElement("CANVAS");
   const width = img.width;
@@ -54,12 +54,18 @@ const voronoi = async (img, context, size) => {
       if (Math.random() < pointWeight[y * width + x]) break;
     }
   }
+  percentile+=10;
+  setPercentile(percentile);
 
   const delaunay = new Delaunay(points);
   const voronoi = delaunay.voronoi([0, 0, width, height]);
 
-  for (let k = 0; k < 200; k++) {
-    drawPoints(points, context, size);
+  for (let k = 0; k < 40; k++) {
+    drawPoints(points, context, size, img.height, img.width);
+    if( k % 10 === 9 ){
+      percentile+=20;
+      setPercentile(percentile);
+    }
     await new Promise((resolve) =>
       setTimeout(() => resolve(), 1000 / (k + 10))
     );
@@ -87,51 +93,31 @@ const voronoi = async (img, context, size) => {
     }
     voronoi.update();
   }
-  drawPoints(points, context, size);
-  //setConfigs({ points, width, height, n: 10000 });
-};
-//子组件，用来生成模拟点图像
-const RenderImage = (props) => {
-  const { points, width, height, n } = props.config;
-  useEffect(() => {
-    console.log("Rerender");
-    const canvas = document.getElementById("image");
-    canvas.height = height;
-    canvas.width = width;
-    const context = canvas.getContext("2d");
-    context.fillStyle = "#fff";
-    context.fillRect(0, 0, width, height);
-    context.beginPath();
-    for (let i = 0; i < n; i++) {
-      const x = points[i * 2],
-        y = points[i * 2 + 1];
-      context.moveTo(x + 1.5, y);
-      context.arc(x, y, 1.5, 0, 2 * Math.PI);
-    }
-    context.fillStyle = "#000";
-    context.fill();
-  }, [props]);
-  return <canvas id="image" />;
+  drawPoints(points, context, size, img.height, img.width);
+  setBarAnimated(false);
 };
 
-const Trial = () => {
-  const [configs, setConfigs] = useState({
-    points: [],
-    width: 0,
-    height: 0,
-    n: 0,
-  });
+const RenderPlots = () => {
+  const { width, height, pointsNum } = config;
+  const [ percentile, setPercentile ] = useState(0);
+  const [ barAnimated, setBarAnimated ] = useState(true);
   useEffect(() => {
     const img = new Image();
     img.src = profile;
     const canvas = document.getElementById("profile");
     img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
+      canvas.width = width;
+      canvas.height = height;
       const context = canvas.getContext("2d");
-      voronoi(img, context, 10000);
+      setPercentile(10);
+      voronoi(img, context, pointsNum, setPercentile, 10, setBarAnimated);
     };
   }, []);
-  return <canvas id="profile" />;
+  return(
+    <div className="renderPlots">
+      <canvas id="profile" />
+      <ProgressBar animated={barAnimated} now={percentile} />
+    </div> 
+  );
 };
-export default Trial;
+export default RenderPlots;
