@@ -2,11 +2,11 @@ import React,{ useEffect, useState } from "react";
 import ProgressBar from 'react-bootstrap/ProgressBar';
 import { Delaunay } from "d3-delaunay";
 import { config } from "./config.js";
-import profile from "./profile.png";
 
 const drawPoints = (points, context, n, originHeight, originWidth) => {
   //此处不再需要画板参数height和width了
-  const {height, width} = config;
+  const {height} = config;
+  const width = (height*originWidth)/originHeight;
   context.fillStyle = "#fff";
   context.fillRect(0, 0, width, height);
   context.beginPath();
@@ -48,7 +48,7 @@ const voronoi = async (img, context, size, setPercentile, percentile, setBarAnim
   const centroid = new Array(size * 2).fill(0);
   const weight = new Array(size).fill(0);
   for (let i = 0; i < size; i++) {
-    for (let j = 0; j < 10; j++) {
+    for (let j = 0; j < 50; j++) {
       const x = (points[i * 2] = Math.floor(Math.random() * width));
       const y = (points[i * 2 + 1] = Math.floor(Math.random() * height));
       if (Math.random() < pointWeight[y * width + x]) break;
@@ -97,22 +97,23 @@ const voronoi = async (img, context, size, setPercentile, percentile, setBarAnim
   setBarAnimated(false);
 };
 
-const RenderPlots = () => {
+const RenderPlots = props => {
   const { width, height, pointsNum } = config;
   const [ percentile, setPercentile ] = useState(0);
   const [ barAnimated, setBarAnimated ] = useState(true);
   useEffect(() => {
     const img = new Image();
-    img.src = profile;
+    img.src = props.img;
     const canvas = document.getElementById("profile");
+    setBarAnimated(true);
     img.onload = () => {
-      canvas.width = width;
       canvas.height = height;
+      canvas.width = (height*img.width)/img.height;
       const context = canvas.getContext("2d");
       setPercentile(10);
       voronoi(img, context, pointsNum, setPercentile, 10, setBarAnimated);
     };
-  }, []);
+  }, [props.img]);
   return(
     <div className="renderPlots">
       <canvas id="profile" />
